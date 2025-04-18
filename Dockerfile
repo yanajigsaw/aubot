@@ -1,29 +1,37 @@
-# Берём официальную Ubuntu
-FROM ubuntu:24.04
+FROM python:3.12-slim
 
-# Не ругаемся на диалоги и сразу обновляем пакеты
+# Отключаем интерактивные диалоги при apt
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
-       python3-pip python3-dev \
-       libfftw3-dev libyaml-dev libboost-all-dev cmake swig git \
-    && rm -rf /var/lib/apt/lists/*
 
-# Ставим Python‑пакеты
-RUN pip3 install --no-cache-dir \
-      python-telegram-bot \
-      python-dotenv \
-      essentia
+# Устанавливаем системные зависимости для сборки Essentia
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libfftw3-dev \
+    libyaml-dev \
+    libboost-all-dev \
+    cmake \
+    swig \
+    git \
+ && rm -rf /var/lib/apt/lists/*
 
-# Копируем код бота внутрь контейнера
+# Клонируем и собираем Essentia из исходников
+WORKDIR /opt
+RUN git clone --depth 1 https://github.com/MTG/essentia.git \
+ && cd essentia \
+ && mkdir build && cd build \
+ && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_BINDINGS_PYTHON=ON -DBUILD_EXAMPLES=OFF \
+ && make -j$(nproc) && make install && ldconfig
+
+# Рабочая директория для бота
 WORKDIR /app
-COPY . /app
 
-# Создаём папку для временных файлов
+# Ставим зависимости бота (уберите 'essentia' из requirements.txt)
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir python-telegram-bot python-dotenv
+
+# Копируем код проекта
+COPY . /app
 RUN mkdir -p /app/downloads
 
-# Экспортим порт (для webhook‑режима, если понадобится)
-EXPOSE 8443
-
-# Запускаем бот
-CMD ["python3", "telegram_bot.py"]
+# Запуск
+CMD ["python", "telegram_bot.py"]
