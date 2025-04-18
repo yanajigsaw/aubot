@@ -4,8 +4,7 @@ from telegram import Update
 from telegram.ext import Updater, MessageHandler, filters, CallbackContext, CommandHandler
 from essentia.standard import MonoLoader, RhythmExtractor2013, KeyExtractor
 
-# Camelot mapping
-CAMELot_MAP = {
+# Camelot mapping\ nCAMELot_MAP = {
     # Major keys
     (0, 'major'): '8B', (7, 'major'): '9B', (2, 'major'): '10B', (9, 'major'): '11B',
     (4, 'major'): '12B', (11, 'major'): '1B', (6, 'major'): '2B', (1, 'major'): '3B',
@@ -34,9 +33,9 @@ def handle_audio(update: Update, context: CallbackContext):
         return msg.reply_text("Пожалуйста, отправь мне аудиофайл (mp3, wav и т.п.).")
 
     os.makedirs(DOWNLOAD_DIR, exist_ok=True)
-    file = context.bot.get_file(audio.file_id)
+    tg_file = context.bot.get_file(audio.file_id)
     local_path = os.path.join(DOWNLOAD_DIR, f"{audio.file_id}.mp3")
-    file.download(local_path)
+    tg_file.download(local_path)
 
     tempo, key, scale = analyze_audio(local_path)
     camelot = CAMELot_MAP.get((int(key), scale), 'Unknown')
@@ -47,13 +46,10 @@ def handle_audio(update: Update, context: CallbackContext):
 
 
 def analyze_audio(path: str):
-    loader = MonoLoader(filename=path)
-    audio = loader()
-
+    audio = MonoLoader(filename=path)()
     tempo, _, _, _, _ = RhythmExtractor2013(method="multifeature")(audio)
     key, scale, _ = KeyExtractor()(audio)
-
-    return tempo, int(key), scale
+    return tempo, key, scale
 
 
 if __name__ == '__main__':
