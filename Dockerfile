@@ -7,7 +7,13 @@ WORKDIR /app
 
 # Копируем файл зависимостей и устанавливаем их
 COPY requirements.txt /app/
+
+# Устанавливаем pip, если его нет
+RUN apt-get update && apt-get install -y python3-pip
+
+# Ставим Python-зависимости
 RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
 
 
 # Копируем весь код проекта
