@@ -7,7 +7,8 @@ WORKDIR /app
 
 # Копируем файл зависимостей и устанавливаем их
 COPY requirements.txt /app/
-RUN pip install --no-cache-dir -r requirements.txt
+RUN python3 -m pip install --no-cache-dir -r requirements.txt
+
 
 # Копируем весь код проекта
 COPY . /app
